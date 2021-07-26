@@ -32,11 +32,11 @@ def shutdown_session(response_or_exc):
 
 def log_message(d):
     # Takes input dictionary d and writes it to the Log table
-    log_tb = Log()
+    obj = Log()
     for r in d.keys():
-        log_tb.__setattr__(r, d[r])
+        obj.__setattr__(r, d[r])
     session = g.session()
-    session.add(log_tb)
+    session.add(obj)
     session.commit()
 
 """
@@ -73,33 +73,33 @@ def trade():
         payload=content["payload"]
         platform=payload["platform"]
         sender_pk=payload["sender_pk"]
-        flag=False
+        sig_right=False
         #check sig
         if platform=="Ethereum":
             msg=json.dumps(payload)
-            eth_encoded_message=eth_account.messages.encode_defunct(text=msg)
-            get_ac=eth_account.Account.recover_message(signable_message=eth_encoded_message,signature=sig)
-            if sender_pk==get_ac:
-                flag=True
+            eth_encoded_msg=eth_account.messages.encode_defunct(text=msg)
+            get_account=eth_account.Account.recover_message(signable_message=eth_encoded_msg,signature=sig)
+            if sender_pk==get_account:
+                sig_right=True
         if platform=="Algorand":
             msg = json.dumps(payload)
             if algosdk.util.verify_bytes(msg.encode('utf-8'), sig,sender_pk):
-                flag = True
-        if flag:
+                sig_right = True
+        if sig_right:
             #save this order
-            new_order_dict={}
-            new_order_dict['sender_pk'] = payload['sender_pk']
-            new_order_dict['receiver_pk'] = payload['receiver_pk']
-            new_order_dict['buy_currency'] = payload['buy_currency']
-            new_order_dict['sell_currency'] = payload['sell_currency']
-            new_order_dict['buy_amount'] = payload['buy_amount']
-            new_order_dict['sell_amount'] = payload['sell_amount']
-            new_order_dict['signature'] = sig
-            obj_tb = Order()
-            for r in new_order_dict.keys():
-                obj_tb.__setattr__(r, new_order_dict[r])
+            order_dict={}
+            order_dict['sender_pk'] = payload['sender_pk']
+            order_dict['receiver_pk'] = payload['receiver_pk']
+            order_dict['buy_currency'] = payload['buy_currency']
+            order_dict['sell_currency'] = payload['sell_currency']
+            order_dict['buy_amount'] = payload['buy_amount']
+            order_dict['sell_amount'] = payload['sell_amount']
+            order_dict['signature'] = sig
+            obj = Order()
+            for r in order_dict.keys():
+                obj.__setattr__(r, order_dict[r])
             session=g.session()
-            session.add(obj_tb)
+            session.add(obj)
             session.commit()
             error=True
         else:
@@ -118,18 +118,18 @@ def order_book():
     result = {}
     session = g.session()
     data = session.query(Order).all()
-    all_data = []
+    datas = []
     for obj in data:
-        new_order_dict = {}
-        new_order_dict['sender_pk'] = obj.sender_pk
-        new_order_dict['receiver_pk'] = obj.receiver_pk
-        new_order_dict['buy_currency'] = obj.buy_currency
-        new_order_dict['sell_currency'] = obj.sell_currency
-        new_order_dict['buy_amount'] = obj.buy_amount
-        new_order_dict['sell_amount'] = obj.sell_amount
-        new_order_dict['signature'] = obj.signature
-        datas.append(new_order_dict)
-    result["data"] = all_data
+        order_dict = {}
+        order_dict['sender_pk'] = obj.sender_pk
+        order_dict['receiver_pk'] = obj.receiver_pk
+        order_dict['buy_currency'] = obj.buy_currency
+        order_dict['sell_currency'] = obj.sell_currency
+        order_dict['buy_amount'] = obj.buy_amount
+        order_dict['sell_amount'] = obj.sell_amount
+        order_dict['signature'] = obj.signature
+        datas.append(order_dict)
+    result["data"] = datas
     return jsonify(result)
 
 if __name__ == '__main__':
