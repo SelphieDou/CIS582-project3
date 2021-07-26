@@ -73,19 +73,19 @@ def trade():
         payload=content["payload"]
         platform=payload["platform"]
         sender_pk=payload["sender_pk"]
-        sig_right=False
+        flag=False
         #check sig
         if platform=="Ethereum":
             msg=json.dumps(payload)
             eth_encoded_msg=eth_account.messages.encode_defunct(text=msg)
-            get_account=eth_account.Account.recover_message(signable_message=eth_encoded_msg,signature=sig)
-            if sender_pk==get_account:
-                sig_right=True
+            user_account=eth_account.Account.recover_message(signable_message=eth_encoded_msg,signature=sig)
+            if sender_pk==user_account:
+                flag=True
         if platform=="Algorand":
             msg = json.dumps(payload)
             if algosdk.util.verify_bytes(msg.encode('utf-8'), sig,sender_pk):
-                sig_right = True
-        if sig_right:
+                flag = True
+        if flag:
             #save this order
             order_dict={}
             order_dict['sender_pk'] = payload['sender_pk']
